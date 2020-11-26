@@ -75,7 +75,7 @@ void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&
 // @param len size of the buffer
 void ASCII_protocol_process_line(const uint8_t* buffer, size_t len, StreamSink& response_channel) {
     static_assert(sizeof(char) == sizeof(uint8_t));
-
+// ADD Address
     // scan line to find beginning of checksum and prune comment
     uint8_t checksum = 0;
     size_t checksum_start = SIZE_MAX;
