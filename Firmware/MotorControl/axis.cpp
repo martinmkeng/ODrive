@@ -155,9 +155,9 @@ bool Axis::do_checks(uint32_t timestamp) {
     motor_.do_checks(timestamp);
 
     // Check for endstop presses
-    if (min_endstop_.config_.enabled && min_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING)) {
+    if (min_endstop_.config_.enabled && min_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
         error_ |= ERROR_MIN_ENDSTOP_PRESSED;
-    } else if (max_endstop_.config_.enabled && max_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING)) {
+    } else if (max_endstop_.config_.enabled && max_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
         error_ |= ERROR_MAX_ENDSTOP_PRESSED;
     }
 
@@ -480,6 +480,51 @@ bool Axis::run_homing() {
     return check_for_errors();
 }
 
+// KMART: Find position of next max endstop for rotational device
+// moves in positive direction at homing_speed until max endstop is pressed, then moves further forward until max endstop is released
+bool Axis::run_find_pos() {
+    Controller::ControlMode stored_control_mode = controller_.config_.control_mode;
+    Controller::InputMode stored_input_mode = controller_.config_.input_mode;
+
+    // TODO: theoretically this check should be inside the update loop,
+    // otherwise someone could disable the endstop while homing is in progress.
+    if (!max_endstop_.config_.enabled) {
+        return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
+    }
+
+    controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
+    controller_.config_.input_mode = Controller::INPUT_MODE_VEL_RAMP;
+
+    controller_.input_pos_ = 0.0f;
+    controller_.input_pos_updated();
+    controller_.input_vel_ = controller_.config_.homing_speed;
+    controller_.input_torque_ = 0.0f;
+
+    start_closed_loop_control();
+
+    // Driving toward the endstop
+    while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !max_endstop_.get_state()) {
+        osDelay(1);
+    }
+
+    //KMART: Save found position
+    homing_.FoundPosition = encoder_.pos_estimate_counts_;
+
+    //KMART: Continue driving until endstop is released
+    while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && max_endstop_.get_state()) {
+        osDelay(1);
+    }
+
+    stop_closed_loop_control();
+
+    error_ &= ~ERROR_MAX_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
+
+    controller_.config_.control_mode = stored_control_mode;
+    controller_.config_.input_mode = stored_input_mode;
+
+    return check_for_errors();
+}
+
 bool Axis::run_idle_loop() {
     mechanical_brake_.engage();
     set_step_dir_active(config_.enable_step_dir && config_.step_dir_always_on);
@@ -562,6 +607,12 @@ void Axis::run_state_machine_loop() {
                 if (odrv.any_error())
                     goto invalid_state_label;
                 status = run_homing();
+            } break;
+
+            case AXIS_STATE_FIND_POS: {
+                if (odrv.any_error())
+                    goto invalid_state_label;
+                status = run_find_pos();
             } break;
 
             case AXIS_STATE_ENCODER_OFFSET_CALIBRATION: {

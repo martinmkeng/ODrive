@@ -1198,6 +1198,10 @@ valuetypes:
         brief: Run axis homing function.
         doc:
           Endstops must be enabled to use this feature.
+      FindPos:
+        brief: Find position of next max endstop on rotational device
+        doc:
+          Endstops must be enabled to use this feature.
 
   ODrive.Encoder.Mode:
     values:
