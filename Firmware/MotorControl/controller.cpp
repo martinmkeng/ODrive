@@ -96,28 +96,6 @@ static float limitVel(const float vel_limit, const float vel_estimate, const flo
     return std::clamp(torque, Tmin, Tmax);
 }
 
-//KMART: Find next max endstop position on rotational device
-void Controller::find_position() {
-/*//KMART: TODO Update Code
-    if (axis_->max_endstop_.config_.enabled) {
-        set_vel_setpoint(-config_.homing_speed, 0.0f);
-        axis_->homing_state_ = HOMING_STATE_FIND_POSITION;
-    } else {
-        return false;
-    }
-    return true;*/
-}
-
-//KMART: Drive until max endstop is reached (storage)
-void Controller::drive_up() 
-{
-    /*//KMART: TODO Update Code
-    EndswitchState = ES_STATE_MOVE_UP;
-    pos_setpoint_ = -2800000;
-    
-    return true;*/
-}
-
 bool Controller::update() {
     std::optional<float> pos_estimate_linear = pos_estimate_linear_src_.present();
     std::optional<float> pos_estimate_circular = pos_estimate_circular_src_.present();

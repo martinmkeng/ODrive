@@ -434,34 +434,6 @@ void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum) {
                 axis.watchdog_feed();
             }   
         } 
-        if(pStr[1] == 'u') // drive up 
-        {
-            unsigned motor_number;
-            int numscan = sscanf(pStr, "xu %u", &motor_number);
-            if (numscan < 1) {
-                respond(response_channel, use_checksum, "invalid command format");
-            } else if (motor_number >= AXIS_COUNT) {
-                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
-            } else {
-                Axis& axis = axes[motor_number];
-                axis.controller_.drive_up();
-                axis.watchdog_feed();
-            }   
-        } 
-        if(pStr[1] == 'p') // find position
-        {
-            unsigned motor_number;
-            int numscan = sscanf(pStr, "xp %u", &motor_number);
-            if (numscan < 1) {
-                respond(response_channel, use_checksum, "invalid command format");
-            } else if (motor_number >= AXIS_COUNT) {
-                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
-            } else {
-                Axis& axis = axes[motor_number];
-                axis.controller_.find_position();
-                axis.watchdog_feed();
-            }   
-        } 
 }
 
 // @brief Sends the unknown command response

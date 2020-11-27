@@ -68,9 +68,6 @@ public:
 
     void update_filter_gains();
 
-    void find_position();
-    void drive_up();
-
     bool update();
 
     Config_t config_;
