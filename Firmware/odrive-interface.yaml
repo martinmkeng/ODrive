@@ -412,6 +412,7 @@ interfaces:
       requested_state: AxisState
       loop_counter: readonly uint32
       is_homed: {type: bool, c_name: homing_.is_homed}
+      homing_circular: {type: bool, c_name: homing_.homing_circular}
       config:
         c_is_class: False
         attributes:

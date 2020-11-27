@@ -355,6 +355,10 @@ bool Axis::run_closed_loop_control_loop() {
 
 // Slowly drive in the negative direction at homing_speed until the min endstop is pressed
 // When pressed, set the linear count to the offset (default 0), and then go to position 0
+// KMART: Cicular: Slowly drive in the negative direction at homing_speed until the min endstop is pressed
+// When pressed, sets linear_count to zero and moves to offset (default 0, should be set higher e.g. 50000 to move out of zero position),
+// then moves in positive direction at homing_speed until min endstop is pressed again. 
+// Zero Position is set at average of forward and backward homing (current position / 2).
 bool Axis::run_homing() {
     Controller::ControlMode stored_control_mode = controller_.config_.control_mode;
     Controller::InputMode stored_input_mode = controller_.config_.input_mode;
@@ -386,12 +390,25 @@ bool Axis::run_homing() {
 
     error_ &= ~ERROR_MIN_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
 
-    // pos_setpoint is the starting position for the trap_traj so we need to set it.
-    controller_.pos_setpoint_ = min_endstop_.config_.offset;
-    controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+    if (homing_.homing_circular)
+    {
+        //KMART: Set linear count to zero to "store" position of negative homing direction
+        encoder_.set_linear_count(0);
 
-    // Set our current position in encoder counts to make control more logical
-    encoder_.set_linear_count((int32_t)(controller_.pos_setpoint_ * encoder_.config_.cpr));
+        // pos_setpoint is the starting position for the trap_traj so we need to set it.
+        //KMART: Offset is used in this case to move out of zero position
+        controller_.pos_setpoint_ = -min_endstop_.config_.offset;
+        controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+    }
+    else
+    {
+        // pos_setpoint is the starting position for the trap_traj so we need to set it.
+        controller_.pos_setpoint_ = min_endstop_.config_.offset;
+        controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+
+        // Set our current position in encoder counts to make control more logical
+        encoder_.set_linear_count((int32_t)(controller_.pos_setpoint_ * encoder_.config_.cpr));
+    }
 
     controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
     controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
@@ -408,6 +425,53 @@ bool Axis::run_homing() {
     }
 
     stop_closed_loop_control();
+
+    if (homing_.homing_circular)
+    {
+        //KMART: Rerun homing in opposite direction
+        controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
+        controller_.config_.input_mode = Controller::INPUT_MODE_VEL_RAMP;
+
+        controller_.input_pos_ = 0.0f;
+        controller_.input_pos_updated();
+        controller_.input_vel_ = controller_.config_.homing_speed;
+        controller_.input_torque_ = 0.0f;
+
+        start_closed_loop_control();
+
+        // Driving toward the endstop
+        while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !min_endstop_.get_state()) {
+            osDelay(1);
+        }
+
+        stop_closed_loop_control();
+
+        error_ &= ~ERROR_MIN_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
+
+        //KMART: Set linear count to half of current position (center of homing switch)
+        encoder_.set_linear_count((int32_t)(encoder_.pos_estimate_counts_ * 0.5f));
+
+        // pos_setpoint is the starting position for the trap_traj so we need to set it.
+        // KMART: Set pos_setpoint to zero to move to homing switch center
+        controller_.pos_setpoint_ = 0.0f;
+        controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+
+        controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
+        controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
+
+        controller_.input_pos_ = 0.0f;
+        controller_.input_pos_updated();
+        controller_.input_vel_ = 0.0f;
+        controller_.input_torque_ = 0.0f;
+
+        start_closed_loop_control();
+
+        while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !controller_.trajectory_done_) {
+            osDelay(1);
+        }
+
+        stop_closed_loop_control();
+    }
 
     controller_.config_.control_mode = stored_control_mode;
     controller_.config_.input_mode = stored_input_mode;

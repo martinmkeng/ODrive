@@ -98,6 +98,7 @@ public:
 
     struct Homing_t {
         bool is_homed = false;
+        bool homing_circular = false;
     };
 
     struct CAN_t {
