@@ -67,6 +67,10 @@ public:
     bool anticogging_calibration(float pos_estimate, float vel_estimate);
 
     void update_filter_gains();
+
+    bool find_position();
+    bool drive_up();
+
     bool update();
 
     Config_t config_;

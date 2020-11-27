@@ -48,6 +48,7 @@ void cmd_write_property(char * pStr, StreamSink& response_channel, bool use_chec
 void cmd_update_axis_wdg(char * pStr, StreamSink& response_channel, bool use_checksum);
 void cmd_unknown(char * pStr, StreamSink& response_channel, bool use_checksum);
 void cmd_encoder(char * pStr, StreamSink& response_channel, bool use_checksum);
+void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum);
 
 /* Function implementations --------------------------------------------------*/
 
@@ -136,6 +137,7 @@ void ASCII_protocol_process_line(const uint8_t* buffer, size_t len, StreamSink& 
         case 'w': cmd_write_property(cmd, response_channel, use_checksum);              break;  // write property
         case 'u': cmd_update_axis_wdg(cmd, response_channel, use_checksum);             break;  // Update axis watchdog. 
         case 'e': cmd_encoder(cmd, response_channel, use_checksum);                     break;  // Encoder commands
+        case 'x': cmd_custom(cmd, response_channel, use_checksum);                     break;  // KMART: Custom commands
         default : cmd_unknown(nullptr, response_channel, use_checksum);                 break;
     }
 }
@@ -411,6 +413,55 @@ void cmd_update_axis_wdg(char * pStr, StreamSink& response_channel, bool use_che
     } else {
         axes[motor_number].watchdog_feed();
     }
+}
+
+// @brief Executes a custom command
+// @param pStr buffer of ASCII encoded values
+// @param response_channel reference to the stream to respond on
+// @param use_checksum bool to indicate whether a checksum is required on response
+void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum) {
+        if(pStr[1] == 's') // status
+        {
+            unsigned motor_number;
+            int numscan = sscanf(pStr, "xs %u", &motor_number);
+            if (numscan < 1) {
+                respond(response_channel, use_checksum, "invalid command format");
+            } else if (motor_number >= AXIS_COUNT) {
+                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
+            } else {
+                Axis& axis = axes[motor_number];
+                respond(response_channel, use_checksum, "%u", axis.current_state_);
+                axis.watchdog_feed();
+            }   
+        } 
+        if(pStr[1] == 'u') // drive up 
+        {
+            unsigned motor_number;
+            int numscan = sscanf(pStr, "xu %u", &motor_number);
+            if (numscan < 1) {
+                respond(response_channel, use_checksum, "invalid command format");
+            } else if (motor_number >= AXIS_COUNT) {
+                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
+            } else {
+                Axis& axis = axes[motor_number];
+                axis.controller_.drive_up();
+                axis.watchdog_feed();
+            }   
+        } 
+        if(pStr[1] == 'p') // find position
+        {
+            unsigned motor_number;
+            int numscan = sscanf(pStr, "xp %u", &motor_number);
+            if (numscan < 1) {
+                respond(response_channel, use_checksum, "invalid command format");
+            } else if (motor_number >= AXIS_COUNT) {
+                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
+            } else {
+                Axis& axis = axes[motor_number];
+                axis.controller_.find_position();
+                axis.watchdog_feed();
+            }   
+        } 
 }
 
 // @brief Sends the unknown command response
