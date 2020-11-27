@@ -68,8 +68,8 @@ public:
 
     void update_filter_gains();
 
-    bool find_position();
-    bool drive_up();
+    void find_position();
+    void drive_up();
 
     bool update();
 

@@ -97,25 +97,25 @@ static float limitVel(const float vel_limit, const float vel_estimate, const flo
 }
 
 //KMART: Find next max endstop position on rotational device
-bool Controller::find_position() {
+void Controller::find_position() {
 /*//KMART: TODO Update Code
     if (axis_->max_endstop_.config_.enabled) {
         set_vel_setpoint(-config_.homing_speed, 0.0f);
         axis_->homing_state_ = HOMING_STATE_FIND_POSITION;
     } else {
         return false;
-    }*/
-    return true;
+    }
+    return true;*/
 }
 
 //KMART: Drive until max endstop is reached (storage)
-bool Controller::drive_up() 
+void Controller::drive_up() 
 {
     /*//KMART: TODO Update Code
     EndswitchState = ES_STATE_MOVE_UP;
     pos_setpoint_ = -2800000;
-    */
-    return true;
+    
+    return true;*/
 }
 
 bool Controller::update() {

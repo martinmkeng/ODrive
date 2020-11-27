@@ -932,6 +932,8 @@ interfaces:
             usually corresponds roughly to the current position of the axis.'
           }
       start_anticogging_calibration:
+      find_position:
+      drive_up:
 
 
   ODrive.Encoder:
