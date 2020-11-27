@@ -154,13 +154,15 @@ bool Axis::do_checks(uint32_t timestamp) {
     motor_.effective_current_lim();
     motor_.do_checks(timestamp);
 
+    //KMART: No Endswitch errors at all
+    /*
     // Check for endstop presses
     if (min_endstop_.config_.enabled && min_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
         error_ |= ERROR_MIN_ENDSTOP_PRESSED;
     } else if (max_endstop_.config_.enabled && max_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
         error_ |= ERROR_MAX_ENDSTOP_PRESSED;
     }
-
+    */
     return check_for_errors();
 }
 
@@ -525,6 +527,37 @@ bool Axis::run_find_pos() {
     return check_for_errors();
 }
 
+// KMART: Drive storage upwards until max endstop is set or DriveUpMax is reached (storage empty)
+bool Axis::run_drive_up() {
+
+    bool StorageEmpty = false;
+    // TODO: theoretically this check should be inside the update loop,
+    // otherwise someone could disable the endstop while homing is in progress.
+    if (!max_endstop_.config_.enabled) {
+        return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
+    }
+
+    //KMART: drive a little further than maximum to compensate tolerances
+    controller_.input_pos_ = driveup_.DriveUpMax + 5.0f;
+    controller_.input_pos_updated();
+    
+    start_closed_loop_control();
+
+    //KMART: Driving towards the max endstop, stop if DriveUpMax Position is reached (storage empty)
+    while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !max_endstop_.get_state() && !StorageEmpty) {
+        if ((encoder_.pos_estimate_counts_/encoder_.config_.cpr) > driveup_.DriveUpMax) StorageEmpty = true;
+        osDelay(1);
+    }
+
+    stop_closed_loop_control();
+    error_ &= ~ERROR_MAX_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
+
+    //KMART: Calculate remaining storage fill grade
+    driveup_.DriveUpRemaining = driveup_.DriveUpMax - (encoder_.pos_estimate_counts_/encoder_.config_.cpr);
+
+    return check_for_errors();
+}
+
 bool Axis::run_idle_loop() {
     mechanical_brake_.engage();
     set_step_dir_active(config_.enable_step_dir && config_.step_dir_always_on);
@@ -615,6 +648,11 @@ void Axis::run_state_machine_loop() {
                 status = run_find_pos();
             } break;
 
+            case AXIS_STATE_DRIVE_UP: {
+                if (odrv.any_error())
+                    goto invalid_state_label;
+                status = run_drive_up();
+            } break;
             case AXIS_STATE_ENCODER_OFFSET_CALIBRATION: {
                 if (odrv.any_error())
                     goto invalid_state_label;

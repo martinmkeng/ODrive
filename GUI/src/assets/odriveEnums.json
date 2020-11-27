@@ -29,6 +29,7 @@
 "AXIS_STATE_ENCODER_DIR_FIND"              : 10,
 "AXIS_STATE_HOMING"                        : 11,
 "AXIS_STATE_FIND_POS"                      : 12,
+"AXIS_STATE_DRIVE_UP"                      : 13,
 
 "ENCODER_MODE_INCREMENTAL"                 : 0,
 "ENCODER_MODE_HALL"                        : 1,

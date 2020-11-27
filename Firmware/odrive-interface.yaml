@@ -412,7 +412,8 @@ interfaces:
       requested_state: AxisState
       loop_counter: readonly uint32
       is_homed: {type: bool, c_name: homing_.is_homed}
-      homing_circular: {type: bool, c_name: homing_.homing_circular}
+      DriveUpMax: {type: float32, c_name: driveup_.DriveUpMax}
+      DriveUpRemaining: {type: float32, c_name: driveup_.DriveUpRemaining}      
       config:
         c_is_class: False
         attributes:
@@ -933,8 +934,6 @@ interfaces:
             usually corresponds roughly to the current position of the axis.'
           }
       start_anticogging_calibration:
-      find_position:
-      drive_up:
 
 
   ODrive.Encoder:
@@ -1200,6 +1199,10 @@ valuetypes:
           Endstops must be enabled to use this feature.
       FindPos:
         brief: Find position of next max endstop on rotational device
+        doc:
+          Endstops must be enabled to use this feature.
+      DriveUp:
+        brief: Drive Storage until max endswitch or DriveUpMax Value
         doc:
           Endstops must be enabled to use this feature.
 

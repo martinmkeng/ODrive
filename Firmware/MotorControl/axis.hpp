@@ -102,6 +102,11 @@ public:
         float FoundPosition = 0.0f;
     };
 
+    struct DriveUp_t {
+        float DriveUpMax = 0.0f;
+        float DriveUpRemaining = 0.0f;
+    };
+
     struct CAN_t {
         uint32_t last_heartbeat = 0;
         uint32_t last_encoder = 0;
@@ -148,6 +153,7 @@ public:
     bool run_closed_loop_control_loop();
     bool run_homing();
     bool run_find_pos();
+    bool run_drive_up();
     bool run_idle_loop();
 
     constexpr uint32_t get_watchdog_reset() {
@@ -192,6 +198,7 @@ public:
     AxisState& current_state_ = task_chain_.front();
     uint32_t loop_counter_ = 0;
     Homing_t homing_;
+    DriveUp_t driveup_;
     CAN_t can_;
 
 
