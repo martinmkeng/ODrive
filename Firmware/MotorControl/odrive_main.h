@@ -63,6 +63,7 @@ struct BoardConfig_t {
         DEFAULT_GPIO_MODES
     };
 
+    uint8_t uart_address = 0;
     bool enable_uart_a = true;
     bool enable_uart_b = false;
     bool enable_uart_c = false;

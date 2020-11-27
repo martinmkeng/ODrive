@@ -220,6 +220,9 @@ interfaces:
   ODrive.Config:
     c_is_class: False
     attributes:
+      uart_address:
+        type: uint8
+        doc: Address for Uart Interface Protocol
       enable_uart_a:
         type: bool
         brief: Enables/disables UART_A.

@@ -81,6 +81,15 @@ void MX_UART4_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
+// KMART: Init GPIO3 for DE of LTC485S
+  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitStruct.Pin = GPIO_3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIO_3_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(GPIO_3_GPIO_Port, GPIO_3_Pin, GPIO_PIN_RESET);  
+
 }
 /* USART2 init function */
 

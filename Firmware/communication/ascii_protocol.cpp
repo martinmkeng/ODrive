@@ -55,6 +55,12 @@ void cmd_encoder(char * pStr, StreamSink& response_channel, bool use_checksum);
 template<typename ... TArgs>
 void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&& ... args) {
     char response[64]; // Hardcoded max buffer size. We silently truncate the output if it's too long for the buffer.
+
+    //KMART: Add uart address to response
+    uint8_t out_addr = odrv.config_.uart_address + 48;
+    output.process_bytes((const uint8_t*)"$", 1, nullptr);
+    output.process_bytes((uint8_t*)&out_addr, 1, nullptr);
+
     size_t len = snprintf(response, sizeof(response), fmt, std::forward<TArgs>(args)...);
     len = std::min(len, sizeof(response));
     output.process_bytes((uint8_t*)response, len, nullptr); // TODO: use process_all instead
@@ -75,7 +81,11 @@ void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&
 // @param len size of the buffer
 void ASCII_protocol_process_line(const uint8_t* buffer, size_t len, StreamSink& response_channel) {
     static_assert(sizeof(char) == sizeof(uint8_t));
-// ADD Address
+
+    //KMART: Check for valid uart_address of received message
+    if (buffer[0] != '#') return; // SOF char not received
+    if (buffer[1] != (odrv.config_.uart_address + 48)) return; // Address mismatch (not for us)
+
     // scan line to find beginning of checksum and prune comment
     uint8_t checksum = 0;
     size_t checksum_start = SIZE_MAX;

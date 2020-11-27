@@ -35,6 +35,10 @@ public:
                 return -1;
             // transmit chunk
             memcpy(tx_buf_, buffer, chunk);
+
+            //KMART: Set TX Enable of RS485 Bus, TOOD: Make pin configration generic
+            HAL_GPIO_WritePin(GPIO_3_GPIO_Port, GPIO_3_Pin, GPIO_PIN_SET);
+
             if (HAL_UART_Transmit_DMA(huart_, tx_buf_, chunk) != HAL_OK)
                 return -1;
             buffer += chunk;
@@ -118,4 +122,6 @@ void uart_poll() {
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
     osSemaphoreRelease(sem_uart_dma);
+    //KMART: Reset TX Enable of RS485 Bus, TOOD: Make pin configration generic
+    HAL_GPIO_WritePin(GPIO_3_GPIO_Port, GPIO_3_Pin, GPIO_PIN_RESET);
 }
