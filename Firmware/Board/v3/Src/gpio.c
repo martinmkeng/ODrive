@@ -117,6 +117,32 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(nFAULT_GPIO_Port, &GPIO_InitStruct);
 
+/*
+  //KMART: Enable Pull-Ups of Endstops
+  HAL_GPIO_DeInit(GPIO_4_GPIO_Port, GPIO_4_Pin);
+  GPIO_InitStruct.Pin = GPIO_4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_4_GPIO_Port, &GPIO_InitStruct);
+
+  HAL_GPIO_DeInit(GPIO_5_GPIO_Port, GPIO_5_Pin);
+  GPIO_InitStruct.Pin = GPIO_5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_5_GPIO_Port, &GPIO_InitStruct);
+
+  HAL_GPIO_DeInit(GPIO_6_GPIO_Port, GPIO_6_Pin);
+  GPIO_InitStruct.Pin = GPIO_6_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_6_GPIO_Port, &GPIO_InitStruct);
+
+  HAL_GPIO_DeInit(GPIO_7_GPIO_Port, GPIO_7_Pin);
+  GPIO_InitStruct.Pin = GPIO_7_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_7_GPIO_Port, &GPIO_InitStruct);
+*/
 }
 
 /* USER CODE BEGIN 2 */

@@ -392,7 +392,7 @@ bool Axis::run_homing() {
 
     error_ &= ~ERROR_MIN_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
 
-    if (homing_.homing_circular)
+    if (config_.homing_circular)
     {
         //KMART: Set linear count to zero to "store" position of negative homing direction
         encoder_.set_linear_count(0);
@@ -428,7 +428,7 @@ bool Axis::run_homing() {
 
     stop_closed_loop_control();
 
-    if (homing_.homing_circular)
+    if (config_.homing_circular)
     {
         //KMART: Rerun homing in opposite direction
         controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
@@ -538,14 +538,14 @@ bool Axis::run_drive_up() {
     }
 
     //KMART: drive a little further than maximum to compensate tolerances
-    controller_.input_pos_ = driveup_.DriveUpMax + 5.0f;
+    controller_.input_pos_ = config_.DriveUpMax + 5.0f;
     controller_.input_pos_updated();
     
     start_closed_loop_control();
 
     //KMART: Driving towards the max endstop, stop if DriveUpMax Position is reached (storage empty)
     while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !max_endstop_.get_state() && !StorageEmpty) {
-        if ((encoder_.pos_estimate_counts_/encoder_.config_.cpr) > driveup_.DriveUpMax) StorageEmpty = true;
+        if ((encoder_.pos_estimate_counts_/encoder_.config_.cpr) > config_.DriveUpMax) StorageEmpty = true;
         osDelay(1);
     }
 
@@ -553,7 +553,7 @@ bool Axis::run_drive_up() {
     error_ &= ~ERROR_MAX_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
 
     //KMART: Calculate remaining storage fill grade
-    driveup_.DriveUpRemaining = driveup_.DriveUpMax - (encoder_.pos_estimate_counts_/encoder_.config_.cpr);
+    driveup_.DriveUpRemaining = config_.DriveUpMax - (encoder_.pos_estimate_counts_/encoder_.config_.cpr);
 
     return check_for_errors();
 }

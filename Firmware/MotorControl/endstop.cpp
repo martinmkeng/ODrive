@@ -24,6 +24,8 @@ bool Endstop::apply_config() {
     debounceTimer_.reset();
     if (config_.enabled) {
         debounceTimer_.start();
+        //KMART: Enable Pull-Ups for Endstop GPIOs
+        get_gpio(config_.gpio_num).config(GPIO_MODE_INPUT,GPIO_PULLUP,GPIO_SPEED_FREQ_LOW);
     } else {
         debounceTimer_.stop();
     }

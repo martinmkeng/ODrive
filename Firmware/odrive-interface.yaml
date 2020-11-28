@@ -412,11 +412,16 @@ interfaces:
       requested_state: AxisState
       loop_counter: readonly uint32
       is_homed: {type: bool, c_name: homing_.is_homed}
-      DriveUpMax: {type: float32, c_name: driveup_.DriveUpMax}
       DriveUpRemaining: {type: float32, c_name: driveup_.DriveUpRemaining}      
       config:
         c_is_class: False
         attributes:
+          homing_circular: 
+            type: bool
+            doc: Perform homing in both directions
+          DriveUpMax: 
+            type: float32
+            doc: Maximum Storage Position
           startup_motor_calibration:
             type: bool
             doc: run motor calibration at startup, skip otherwise
