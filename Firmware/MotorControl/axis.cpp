@@ -371,6 +371,36 @@ bool Axis::run_homing() {
         return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
     }
 
+    start_closed_loop_control();
+
+    //KMART: Move out of zero position if endstop is already asserted in case of circular homing
+    if (config_.homing_circular && min_endstop_.get_state())
+    {
+        //KMART: Set linear count to zero to "store" position of negative homing direction - needed here?
+        encoder_.set_linear_count(0);
+
+        // pos_setpoint is the starting position for the trap_traj so we need to set it.
+        //KMART: Offset is used in this case to move out of zero position in negative direction
+        controller_.pos_setpoint_ = 0.0f;
+        controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+        controller_.input_pos_ = -min_endstop_.config_.offset;;
+
+        controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
+        controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
+
+        
+        controller_.input_pos_updated();
+        controller_.input_vel_ = 0.0f;
+        controller_.input_torque_ = 0.0f;
+
+         osDelay(10);
+     // start_closed_loop_control();
+
+        while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !controller_.trajectory_done_) {
+            osDelay(1);
+        }
+    }
+
     controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
     controller_.config_.input_mode = Controller::INPUT_MODE_VEL_RAMP;
 
@@ -381,14 +411,14 @@ bool Axis::run_homing() {
 
     homing_.is_homed = false;
 
-    start_closed_loop_control();
+   // start_closed_loop_control();
 
     // Driving toward the endstop
     while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !min_endstop_.get_state()) {
         osDelay(1);
     }
 
-    stop_closed_loop_control();
+ //   stop_closed_loop_control();
 
     error_ &= ~ERROR_MIN_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
 
@@ -399,8 +429,9 @@ bool Axis::run_homing() {
 
         // pos_setpoint is the starting position for the trap_traj so we need to set it.
         //KMART: Offset is used in this case to move out of zero position
-        controller_.pos_setpoint_ = -min_endstop_.config_.offset;
+        controller_.pos_setpoint_ = 0.0f;
         controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+        controller_.input_pos_ = min_endstop_.config_.offset;;
     }
     else
     {
@@ -410,23 +441,25 @@ bool Axis::run_homing() {
 
         // Set our current position in encoder counts to make control more logical
         encoder_.set_linear_count((int32_t)(controller_.pos_setpoint_ * encoder_.config_.cpr));
+        controller_.input_pos_ = 0.0f;
     }
 
     controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
     controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
 
-    controller_.input_pos_ = 0.0f;
+    
     controller_.input_pos_updated();
     controller_.input_vel_ = 0.0f;
     controller_.input_torque_ = 0.0f;
 
-    start_closed_loop_control();
+osDelay(10);
+ //   start_closed_loop_control();
 
     while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !controller_.trajectory_done_) {
         osDelay(1);
     }
 
-    stop_closed_loop_control();
+ //   stop_closed_loop_control();
 
     if (config_.homing_circular)
     {
@@ -439,14 +472,14 @@ bool Axis::run_homing() {
         controller_.input_vel_ = controller_.config_.homing_speed;
         controller_.input_torque_ = 0.0f;
 
-        start_closed_loop_control();
+   //     start_closed_loop_control();
 
         // Driving toward the endstop
         while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !min_endstop_.get_state()) {
             osDelay(1);
         }
 
-        stop_closed_loop_control();
+  //      stop_closed_loop_control();
 
         error_ &= ~ERROR_MIN_ENDSTOP_PRESSED; // clear this error since we deliberately drove into the endstop
 
@@ -466,18 +499,21 @@ bool Axis::run_homing() {
         controller_.input_vel_ = 0.0f;
         controller_.input_torque_ = 0.0f;
 
-        start_closed_loop_control();
+        osDelay(10);
+
+    //    start_closed_loop_control();
 
         while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !controller_.trajectory_done_) {
             osDelay(1);
         }
 
-        stop_closed_loop_control();
+  //      stop_closed_loop_control();
     }
 
     controller_.config_.control_mode = stored_control_mode;
     controller_.config_.input_mode = stored_input_mode;
     homing_.is_homed = true;
+    stop_closed_loop_control();
 
     return check_for_errors();
 }
