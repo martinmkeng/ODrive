@@ -22,7 +22,7 @@
 /* Global variables ----------------------------------------------------------*/
 /* Private constant data -----------------------------------------------------*/
 
-#define MAX_LINE_LENGTH 256
+#define MAX_LINE_LENGTH 255
 #define TO_STR_INNER(s) #s
 #define TO_STR(s) TO_STR_INNER(s)
 
@@ -69,7 +69,7 @@ void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&
         uint8_t checksum = 0;
         for (size_t i = 0; i < len; ++i)
             checksum ^= response[i];
-        len = snprintf(response, sizeof(response), "*%u", checksum);
+        len = snprintf(response, sizeof(response), "*%x", checksum);
         len = std::min(len, sizeof(response));
         output.process_bytes((uint8_t*)response, len, nullptr);
     }
@@ -90,14 +90,14 @@ void ASCII_protocol_process_line(const uint8_t* buffer, size_t len, StreamSink& 
     // scan line to find beginning of checksum and prune comment
     uint8_t checksum = 0;
     size_t checksum_start = SIZE_MAX;
-    for (size_t i = 0; i < len; ++i) {
+    for (size_t i = 2; i < len; ++i) {
         if (buffer[i] == ';') { // ';' is the comment start char
             len = i;
             break;
         }
         if (checksum_start > i) {
             if (buffer[i] == '*') {
-                checksum_start = i + 1;
+                checksum_start = i + 1 - 2;
             } else {
                 checksum ^= buffer[i];
             }
@@ -106,21 +106,24 @@ void ASCII_protocol_process_line(const uint8_t* buffer, size_t len, StreamSink& 
 
     // copy everything into a local buffer so we can insert null-termination
     char cmd[MAX_LINE_LENGTH + 1];
+    len = len -2; // KMART: Remove Address and SOF chars
     if (len > MAX_LINE_LENGTH) len = MAX_LINE_LENGTH;
-    memcpy(cmd, buffer, len);
+    memcpy(cmd, buffer+2, len);
     cmd[len] = 0; // null-terminate
 
     // optional checksum validation
     bool use_checksum = (checksum_start < len);
     if (use_checksum) {
         unsigned int received_checksum;
-        int numscan = sscanf(&cmd[checksum_start], "%u", &received_checksum);
+        int numscan = sscanf(&cmd[checksum_start], "%x", &received_checksum);
         if ((numscan < 1) || (received_checksum != checksum))
+        {
+            respond(response_channel, use_checksum, "CSNOK");
             return;
+        }
         len = checksum_start - 1; // prune checksum and asterisk
         cmd[len] = 0; // null-terminate
     }
-
 
     // check incoming packet type
     switch(cmd[0]) {
@@ -358,7 +361,7 @@ void cmd_system_ctrl(char * pStr, StreamSink& response_channel, bool use_checksu
 // @param response_channel reference to the stream to respond on
 // @param use_checksum bool to indicate whether a checksum is required on response
 void cmd_read_property(char * pStr, StreamSink& response_channel, bool use_checksum) {
-    char name[MAX_LINE_LENGTH];
+    char name[MAX_LINE_LENGTH+1];
 
     if (sscanf(pStr, "r %255s", name) < 1) {
         respond(response_channel, use_checksum, "invalid command format");
@@ -380,8 +383,8 @@ void cmd_read_property(char * pStr, StreamSink& response_channel, bool use_check
 // @param response_channel reference to the stream to respond on
 // @param use_checksum bool to indicate whether a checksum is required on response
 void cmd_write_property(char * pStr, StreamSink& response_channel, bool use_checksum) {
-    char name[MAX_LINE_LENGTH];
-    char value[MAX_LINE_LENGTH];
+    char name[MAX_LINE_LENGTH+1];
+    char value[MAX_LINE_LENGTH+1];
 
     if (sscanf(pStr, "w %255s %255s", name, value) < 1) {
         respond(response_channel, use_checksum, "invalid command format");
@@ -420,7 +423,7 @@ void cmd_update_axis_wdg(char * pStr, StreamSink& response_channel, bool use_che
 // @param response_channel reference to the stream to respond on
 // @param use_checksum bool to indicate whether a checksum is required on response
 void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum) {
-        if(pStr[1] == 's') // status
+        if(pStr[1] == 's') // current state
         {
             unsigned motor_number;
             int numscan = sscanf(pStr, "xs %u", &motor_number);
@@ -433,7 +436,40 @@ void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum) {
                 respond(response_channel, use_checksum, "%u", axis.current_state_);
                 axis.watchdog_feed();
             }   
+        }
+        else if(pStr[1] == 't') // TrapTraj done
+        {
+            unsigned motor_number;
+            int numscan = sscanf(pStr, "xt %u", &motor_number);
+            if (numscan < 1) {
+                respond(response_channel, use_checksum, "invalid command format");
+            } else if (motor_number >= AXIS_COUNT) {
+                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
+            } else {
+                Axis& axis = axes[motor_number];
+                respond(response_channel, use_checksum, "%u", axis.controller_.trajectory_done_);
+                axis.watchdog_feed();
+            }   
         } 
+        else if(pStr[1] == 'e') // axis error
+        {
+            unsigned motor_number;
+            int numscan = sscanf(pStr, "xe %u", &motor_number);
+            if (numscan < 1) {
+                respond(response_channel, use_checksum, "invalid command format");
+            } else if (motor_number >= AXIS_COUNT) {
+                respond(response_channel, use_checksum, "invalid motor %u", motor_number);
+            } else {
+                Axis& axis = axes[motor_number];
+                respond(response_channel, use_checksum, "%u", axis.error_);
+                axis.watchdog_feed();
+            }   
+        }
+        else
+        {
+            respond(response_channel, use_checksum, "invalid custom command");
+        }
+        
 }
 
 // @brief Sends the unknown command response
