@@ -155,14 +155,14 @@ bool Axis::do_checks(uint32_t timestamp) {
     motor_.do_checks(timestamp);
 
     //KMART: No Endswitch errors at all
-    /*
+    
     // Check for endstop presses
-    if (min_endstop_.config_.enabled && min_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
+    if (min_endstop_.config_.enabled && min_endstop_.rose() && (current_state_ == AXIS_STATE_CLOSED_LOOP_CONTROL) && config_.ErrorAtMinEndswitch) {
         error_ |= ERROR_MIN_ENDSTOP_PRESSED;
-    } else if (max_endstop_.config_.enabled && max_endstop_.rose() && !(current_state_ == AXIS_STATE_HOMING) && !(current_state_ == AXIS_STATE_FIND_POS)) {
+    } else if (max_endstop_.config_.enabled && max_endstop_.rose() && (current_state_ == AXIS_STATE_CLOSED_LOOP_CONTROL) && config_.ErrorAtMaxEndswitch) {
         error_ |= ERROR_MAX_ENDSTOP_PRESSED;
     }
-    */
+    
     return check_for_errors();
 }
 
@@ -530,6 +530,8 @@ bool Axis::run_find_pos() {
         return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
     }
 
+    start_closed_loop_control();
+
     controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
     controller_.config_.input_mode = Controller::INPUT_MODE_VEL_RAMP;
 
@@ -538,7 +540,7 @@ bool Axis::run_find_pos() {
     controller_.input_vel_ = controller_.config_.homing_speed;
     controller_.input_torque_ = 0.0f;
 
-    start_closed_loop_control();
+    osDelay(10);
 
     // Driving toward the endstop
     while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !max_endstop_.get_state()) {
@@ -566,6 +568,9 @@ bool Axis::run_find_pos() {
 // KMART: Drive storage upwards until max endstop is set or DriveUpMax is reached (storage empty)
 bool Axis::run_drive_up() {
 
+    Controller::ControlMode stored_control_mode = controller_.config_.control_mode;
+    Controller::InputMode stored_input_mode = controller_.config_.input_mode;
+
     bool StorageEmpty = false;
     // TODO: theoretically this check should be inside the update loop,
     // otherwise someone could disable the endstop while homing is in progress.
@@ -573,15 +578,27 @@ bool Axis::run_drive_up() {
         return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
     }
 
-    //KMART: drive a little further than maximum to compensate tolerances
-    controller_.input_pos_ = config_.DriveUpMax + 5.0f;
-    controller_.input_pos_updated();
-    
     start_closed_loop_control();
+
+    // pos_setpoint is the starting position for the trap_traj so we need to set it.
+    //KMART: Offset is used in this case to move out of zero position in negative direction
+    controller_.pos_setpoint_ = 0.0f;
+    controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+    //KMART: drive a little further than maximum to compensate tolerances, negative offset as DriveupMax is negative value
+    controller_.input_pos_ = config_.DriveUpMax - 5.0f;
+
+    controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
+    controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
+
+    controller_.input_pos_updated();
+    controller_.input_vel_ = 0.0f;
+    controller_.input_torque_ = 0.0f;
+
+    osDelay(10);
 
     //KMART: Driving towards the max endstop, stop if DriveUpMax Position is reached (storage empty)
     while ((requested_state_ == AXIS_STATE_UNDEFINED) && motor_.is_armed_ && !max_endstop_.get_state() && !StorageEmpty) {
-        if ((encoder_.pos_estimate_counts_/encoder_.config_.cpr) > config_.DriveUpMax) StorageEmpty = true;
+        if ((encoder_.pos_estimate_counts_/encoder_.config_.cpr) < config_.DriveUpMax) StorageEmpty = true; // smaller than comparison as driveup is negative value
         osDelay(1);
     }
 
@@ -590,6 +607,9 @@ bool Axis::run_drive_up() {
 
     //KMART: Calculate remaining storage fill grade
     driveup_.DriveUpRemaining = config_.DriveUpMax - (encoder_.pos_estimate_counts_/encoder_.config_.cpr);
+
+    controller_.config_.control_mode = stored_control_mode;
+    controller_.config_.input_mode = stored_input_mode;
 
     return check_for_errors();
 }

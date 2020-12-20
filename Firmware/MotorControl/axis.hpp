@@ -96,6 +96,8 @@ public:
         void set_dir_gpio_pin(uint16_t value) { dir_gpio_pin = value; parent->decode_step_dir_pins(); }
 
         bool homing_circular = false;
+        bool ErrorAtMinEndswitch = false;
+        bool ErrorAtMaxEndswitch = false;
         float DriveUpMax = 0.0f;
     };
 

@@ -419,6 +419,12 @@ interfaces:
           homing_circular: 
             type: bool
             doc: Perform homing in both directions
+          ErrorAtMinEndswitch: 
+            type: bool
+            doc: Issue Error if Min Endswitch is triggered
+          ErrorAtMaxEndswitch: 
+            type: bool
+            doc: Issue Error if Max Endswitch is triggered
           DriveUpMax: 
             type: float32
             doc: Maximum Storage Position
