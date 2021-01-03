@@ -371,6 +371,8 @@ bool Axis::run_homing() {
         return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
     }
 
+    controller_.config_.input_mode = Controller::INPUT_MODE_PASSTHROUGH;
+
     start_closed_loop_control();
 
     //KMART: Move out of zero position if endstop is already asserted in case of circular homing
@@ -578,17 +580,19 @@ bool Axis::run_drive_up() {
         return error_ |= ERROR_HOMING_WITHOUT_ENDSTOP, false;
     }
 
+    controller_.config_.input_mode = Controller::INPUT_MODE_PASSTHROUGH;
+
     start_closed_loop_control();
 
     // pos_setpoint is the starting position for the trap_traj so we need to set it.
     //KMART: Offset is used in this case to move out of zero position in negative direction
-    controller_.pos_setpoint_ = 0.0f;
-    controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
+//    controller_.pos_setpoint_ = 0.0f;
+//    controller_.vel_setpoint_ = 0.0f;  // Change directions without decelerating
     //KMART: drive a little further than maximum to compensate tolerances, negative offset as DriveupMax is negative value
     controller_.input_pos_ = config_.DriveUpMax - 5.0f;
 
     controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
-    controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
+    //controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
 
     controller_.input_pos_updated();
     controller_.input_vel_ = 0.0f;
