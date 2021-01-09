@@ -56,7 +56,8 @@ void cmd_custom(char * pStr, StreamSink& response_channel, bool use_checksum);
 template<typename ... TArgs>
 void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&& ... args) {
     char response[64]; // Hardcoded max buffer size. We silently truncate the output if it's too long for the buffer.
-
+osDelay(1);
+HAL_GPIO_WritePin(GPIO_3_GPIO_Port, GPIO_3_Pin, GPIO_PIN_SET);
     //KMART: Add uart address to response
     uint8_t out_addr = odrv.config_.uart_address + 48;
     output.process_bytes((const uint8_t*)"$", 1, nullptr);
@@ -74,6 +75,8 @@ void respond(StreamSink& output, bool include_checksum, const char * fmt, TArgs&
         output.process_bytes((uint8_t*)response, len, nullptr);
     }
     output.process_bytes((const uint8_t*)"\r\n", 2, nullptr);
+osDelay(1);
+HAL_GPIO_WritePin(GPIO_3_GPIO_Port, GPIO_3_Pin, GPIO_PIN_RESET);
 }
 
 
