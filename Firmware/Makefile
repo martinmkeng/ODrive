@@ -3,8 +3,8 @@
 # Tup is used for the actual compilation.
 
 BUILD_DIR = build
-FIRMWARE = $(BUILD_DIR)/ODriveFirmware.elf
-FIRMWARE_HEX = $(BUILD_DIR)/ODriveFirmware.hex
+FIRMWARE = C:/Projects/GitHub/ODrive/Firmware/build/ODriveFirmware.elf
+FIRMWARE_HEX = C:/Projects/GitHub/ODrive/Firmware/build/ODriveFirmware.hex
 OPENOCD := openocd -f interface/stlink-v2.cfg \
 		$(if $(value PROGRAMMER),-c 'hla_serial $(PROGRAMMER)',) \
 		-f target/stm32f4x.cfg

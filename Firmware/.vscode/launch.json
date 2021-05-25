@@ -9,14 +9,45 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "request": "launch",
-            "name": "Debug ODrive - ST-Link",
+            "name": "Debug ODrive - JLINK OCD",
             "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "configFiles": [
+                "openocd-jlink-swd.cfg"
+            ],
+            "svdFile": "${workspaceRoot}/Board/v3/STM32F40x.svd",
+            "rtos": "FreeRTOS",
+            "cwd": "${workspaceRoot}"
+        },
+    {
+        "cwd": "${workspaceRoot}",
+        "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+        "name": "Debug JLINK",
+        "request": "launch",
+        "type": "cortex-debug",
+        "device": "STM32F405RG",
+        "serverpath": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe", 
+        //"runToMain": true,
+        "configFiles": [
+            "interface/jlink.cfg",
+            "target/stm32f4x.cfg",
+        ],        
+        "svdFile": "${workspaceRoot}/Board/v3/STM32F40x.svd",
+        "rtos": "FreeRTOS",
+        "servertype": "jlink"
+    },
+        {
+            // For the Cortex-Debug extension
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "request": "launch",
+            "name": "Debug ODrive - ST-Link",
+            "executable": "C:/Projects/GitHub/ODrive/Firmware/build/ODriveFirmware.elf",
             "configFiles": [
                 "interface/stlink-v2.cfg",
                 "target/stm32f4x_stlink.cfg",
             ],
-            "svdFile": "${workspaceRoot}/Board/v3/STM32F40x.svd",
-            "cwd": "${workspaceRoot}"
+            "svdFile": "C:/Projects/GitHub/ODrive/Firmware/Board/v3/STM32F40x.svd",
+            "cwd": "C:/Projects/GitHub/ODrive/Firmware/"
         },
         {
             // For the Cortex-Debug extension
@@ -24,14 +55,14 @@
             "servertype": "openocd",
             "request": "launch",
             "name": "Debug ODrive - ST-Link - FreeRTOS",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "C:/Projects/GitHub/ODrive/Firmware/build/ODriveFirmware.elf",
             "rtos": "FreeRTOS",
             "configFiles": [
                 "interface/stlink-v2.cfg",
                 "target/stm32f4x_stlink.cfg",
             ],
             "svdFile": "${workspaceRoot}/Board/v3/STM32F40x.svd",
-            "cwd": "${workspaceRoot}"
+            "cwd": "C:/Projects/GitHub/ODrive/Firmware"
         },
         {
             // For the Cortex-Debug extension

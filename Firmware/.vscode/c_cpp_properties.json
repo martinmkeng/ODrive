@@ -3,7 +3,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:/Projects/GitHub/ODrive/Firmware/",
+                "C:/Projects/GitHub/ODrive/Firmware/MotorControl"
             ],
             "defines": [
                 "__arm__",
