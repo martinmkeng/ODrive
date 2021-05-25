@@ -70,9 +70,9 @@ struct BoardConfig_t {
     uint32_t uart_a_baudrate = 115200;
     uint32_t uart_b_baudrate = 115200;
     uint32_t uart_c_baudrate = 115200;
-    bool enable_can_a = true;
+    bool enable_can_a = false;
     bool enable_i2c_a = false;
-    bool enable_ascii_protocol_on_usb = true;
+    bool enable_ascii_protocol_on_usb = false;
     float max_regen_current = 0.0f;
     float brake_resistance = DEFAULT_BRAKE_RESISTANCE;
     bool enable_brake_resistor = false;

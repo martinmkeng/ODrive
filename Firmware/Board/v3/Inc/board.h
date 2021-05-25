@@ -48,7 +48,7 @@
     ODriveIntf::GPIO_MODE_DIGITAL, \
     ODriveIntf::GPIO_MODE_UART_A, \
     ODriveIntf::GPIO_MODE_UART_A, \
-    ODriveIntf::GPIO_MODE_ANALOG_IN, \
+    ODriveIntf::GPIO_MODE_STATUS, \
     ODriveIntf::GPIO_MODE_ANALOG_IN, \
     ODriveIntf::GPIO_MODE_ANALOG_IN, \
     ODriveIntf::GPIO_MODE_DIGITAL, \
